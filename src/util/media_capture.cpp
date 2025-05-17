@@ -2156,6 +2156,13 @@ bool MediaCaptureFFmpeg::InternalBeginCapture(float fps, float aspect, u32 sampl
     wrap_av_reduce(&m_video_codec_context->framerate.num, &m_video_codec_context->framerate.den,
                    static_cast<s64>(static_cast<double>(fps) * 10000.0), 10000, std::numeric_limits<s32>::max());
 
+    // Need to set some defaults, otherwise openh264 emits black frames.
+    if (std::strcmp(vcodec->name, "libopenh264") == 0)
+    {
+      wrap_av_opt_set_int(m_video_codec_context->priv_data, "allow_skip_frames", 1, AV_OPT_SEARCH_CHILDREN);
+      m_video_codec_context->profile = AV_PROFILE_H264_MAIN;
+    }
+
     // Map input pixel format.
     static constexpr const std::pair<GPUTexture::Format, AVPixelFormat> texture_pf_mapping[] = {
       {GPUTexture::Format::RGBA8, AV_PIX_FMT_RGBA},
