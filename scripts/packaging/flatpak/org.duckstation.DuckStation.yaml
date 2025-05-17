@@ -7,6 +7,12 @@ runtime-version: "6.9"
 sdk: "org.kde.Sdk"
 sdk-extensions:
   - "org.freedesktop.Sdk.Extension.llvm19"
+add-extensions:
+  "org.freedesktop.Platform.openh264":
+    directory: "lib/openh264"
+    version: "24.08"
+    add-ld-path: "."
+    autodownload: true
 
 command: "duckstation-qt"
 
