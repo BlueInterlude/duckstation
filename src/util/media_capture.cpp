@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <atomic>
 #include <condition_variable>
+#include <cstdlib>
 #include <cstring>
 #include <deque>
 #include <limits>
@@ -2112,10 +2113,16 @@ bool MediaCaptureFFmpeg::InternalBeginCapture(float fps, float aspect, u32 sampl
       }
     }
 
-    // FFmpeg decides whether mp4, mkv, etc should use h264 or mpeg4 as their default codec by whether x264 was enabled
-    // But there's a lot of other h264 encoders (e.g. hardware encoders) we may want to use instead
-    if (!vcodec && wrap_avformat_query_codec(output_format, AV_CODEC_ID_H264, FF_COMPLIANCE_NORMAL))
-      vcodec = wrap_avcodec_find_encoder(AV_CODEC_ID_H264);
+    // Default to VP9, because there's no LGPL H.264 encoder. In Flatpak builds, openh264 should be available.
+#ifdef __linux__
+    const AVCodecID default_video_codec = (std::getenv("container") != nullptr) ? AV_CODEC_ID_H264 : AV_CODEC_ID_VP9;
+#else
+    constexpr AVCodecID default_video_codec = AV_CODEC_ID_VP9;
+#endif
+
+    // Use container default if available.
+    if (!vcodec && wrap_avformat_query_codec(output_format, default_video_codec, FF_COMPLIANCE_NORMAL))
+      vcodec = wrap_avcodec_find_encoder(default_video_codec);
     if (!vcodec)
       vcodec = wrap_avcodec_find_encoder(output_format->video_codec);
 
